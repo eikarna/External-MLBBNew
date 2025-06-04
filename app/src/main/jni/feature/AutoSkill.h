@@ -1,31 +1,17 @@
-int ShowSelfPlayer_TryUseSkillByLockUnit(void *instance, int skillId, Vector3 dir, bool dirDefault, Vector3 pos ) {
-    return reinterpret_cast<int (__fastcall *)(void *, int, Vector3, bool, Vector3)>(ShowSelfPlayer_TryUseSkill)(instance, skillId, dir, dirDefault, pos);
-}
+#include "Menu.h"
 
-//Assembly-CSharp.dll -> Class LogicBattleEndCtrl
-#define Offsets_LogicBattleEndCtrl_get_logicBattleManager (uintptr_t) Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("LogicBattleEndCtrl"),OBFUSCATE("get_logicBattleManager"))
-
-//Assembly-CSharp.dll -> Class LogicBattleManager
-#define Offsets_LogicBattleManager_GetPlayerRealSelf (uintptr_t) Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("LogicBattleManager"),OBFUSCATE("GetPlayerRealSelf"))
-
-void *sary_LogicBattleManager(void *instance) {
-    return reinterpret_cast<void * (__fastcall *)(void *)>(Offsets_LogicBattleEndCtrl_get_logicBattleManager)(instance);
-}
-
-void *sary_GetPlayerRealSelf(void *instance) {
-    return reinterpret_cast<void * (__fastcall *)(void *)>(Offsets_LogicBattleManager_GetPlayerRealSelf)(instance);
-}
+float SpeedAim;
 
 void GusionSkill(){
-	if (GusionSkills){
-    Auto.Gusion = true;
-	Auto.Gusion2 = true;
+	if (State::Auto.GusionSkills){
+    State::Auto.Gusion = true;
+	State::Auto.Gusion2 = true;
 	}else{
-    Auto.Gusion = false;
-	Auto.Gusion2 = false;
+    State::Auto.Gusion = false;
+	State::Auto.Gusion2 = false;
 	}
 }
-float SpeedAim;
+
 void Auto_Skill(void *instance)
 {
 	    float MaxDist = std::numeric_limits<float>::infinity();
@@ -68,7 +54,7 @@ void Auto_Skill(void *instance)
 	float KarinaS3 = 950.f ;
 	float ZilongS2 = 850.f;
   
-	 if (Auto.Karina){
+	 if (State::Auto.Karina){
 		  if (_Position1 != Vector3::zero() && fDistance1 <= 2 && PercentHP <= 100){
 		ShowSelfPlayer_TryUseSkillByLockUnit(instance, 820, Vector3::Normalized(_Position1 - selfPos), true, selfPos);                        
 	   }
@@ -77,13 +63,13 @@ void Auto_Skill(void *instance)
 	   }
 	 }
 	 
-	if (Auto.Martis){
+	if (State::Auto.Martis){
 			if (_Position1 != Vector3::zero() && fDistance1 <= 2.5f && m_Hp1 <= (int) MartisS3){
 		ShowSelfPlayer_TryUseSkillByLockUnit(instance, 5830, Vector3::Normalized(_Position1 - selfPos), true, selfPos);                        
 	   }
 	 } 
 	 
-	 if (Auto.Zilong){
+	 if (State::Auto.Zilong){
 		  if (_Position1 != Vector3::zero() && fDistance1 <= 2.5f && m_Hp1 <= (int) ZilongS2){
 		ShowSelfPlayer_TryUseSkillByLockUnit(instance, 1620, Vector3::Normalized(_Position1 - selfPos), true, selfPos);                        
 	   }
@@ -98,18 +84,18 @@ void Auto_Skill(void *instance)
 	 if (EntityPos != Vector3::zero()){
 		auto targetLockPos = Vector3::Normalized(EntityPos - selfPos);
 		
-		if (Auto.Gusion) {
+		if (State::Auto.Gusion) {
 		ShowSelfPlayer_TryUseSkillByLockUnit(instance, 5620, targetLockPos, true, selfPos);                        
 		ShowSelfPlayer_TryUseSkillByLockUnit(instance, 5610, targetLockPos, true, selfPos);                       
 	    }
 	}
-	 if (Auto.Gusion2) {
+	 if (State::Auto.Gusion2) {
 	 if (_Position1 != Vector3::zero() && fDistance1 < 6.5f){
 		ShowSelfPlayer_TryUseSkillByLockUnit(instance, 5630, Vector3::zero(), true, _Position1);             
 	    SpeedAim=0;
 		}
 	}
-	   if (Auto.SwordLing){
+	   if (State::Auto.SwordLing){
 	    List<void **> *_RunBullets;
                     Il2CppGetStaticFieldValue("Assembly-CSharp.dll", "", "BattleManager", "_RunBullets", &_RunBullets);
                      if (_RunBullets) {
@@ -121,7 +107,7 @@ void Auto_Skill(void *instance)
                       auto transform = *(Transform **) ((uintptr_t)Pawn + Bullet_transform);
                       float Distance2 = (int) Vector3::Distance2(selfPos, transform->get_position());
                       if (Distance2 < 5) {
-                      if (Distance2 < MaxSwordDist && Auto.SwordLing ) {
+                      if (Distance2 < MaxSwordDist && State::Auto.SwordLing ) {
                       SwordPos = transform->get_position();
                        MaxSwordDist = Distance2;
                     }

@@ -1,5 +1,3 @@
-
-
 void (*orig_TryUseSkill)(...);
 void TryUseSkill(void*instance,int skillId, Vector3 dir, bool dirDefault, Vector3 pos, bool bCommonAttack, bool bAlong, bool isInFirstDragRange) {
 	bool isDoneAim = false;
@@ -90,16 +88,16 @@ void TryUseSkill(void*instance,int skillId, Vector3 dir, bool dirDefault, Vector
                   }
 		  }*/
 		}
-	   if (Distance < RangeFOV) {
-                                if (Aim.Target == 0 && Distance < MaxDist) {
+	   if (Distance < State::RangeFOV) {
+                                if (State::Aim.Target == 0 && Distance < MaxDist) {
                                     EntityPos = _Position;
                                     MaxDist = Distance;
                                 }
-                                if (Aim.Target == 1 && CurHP < MaxEnemyHP) {
+                                if (State::Aim.Target == 1 && CurHP < MaxEnemyHP) {
                                     EntityPos = _Position;
                                     MaxEnemyHP = CurHP;
                                 }
-                                if (Aim.Target == 2 && PercentHP < MaxPercentHP) {
+                                if (State::Aim.Target == 2 && PercentHP < MaxPercentHP) {
                                     EntityPos = _Position;
                                     MaxPercentHP = PercentHP;
                                 }
@@ -117,7 +115,7 @@ void TryUseSkill(void*instance,int skillId, Vector3 dir, bool dirDefault, Vector
 			
                             float Distance2 = (int) Vector3::Distance2(selfPos, transform->get_position());
                       if (Distance2 < 5) {
-                            if (Distance2 < MaxSwordDist && Aim.AutoTakeSword ) {
+                            if (Distance2 < MaxSwordDist && State::Aim.AutoTakeSword ) {
                                     SwordPos = transform->get_position();
                                     MaxSwordDist = Distance2;
                                 }
@@ -137,7 +135,7 @@ void TryUseSkill(void*instance,int skillId, Vector3 dir, bool dirDefault, Vector
 		auto targetLockPos = Vector3::Normalized(EntityPos - selfPos);
 		  
                      //Basic
-                        if (Aim.Basic) {
+                        if (State::Aim.Basic) {
                             if (skillId == 100 * HeroID + 00) {
                                 isDoneAim = true;
                                 orig_TryUseSkill(instance, skillId, targetLockPos, dirDefault, pos, bCommonAttack, bAlong, false);
@@ -146,21 +144,21 @@ void TryUseSkill(void*instance,int skillId, Vector3 dir, bool dirDefault, Vector
                         //Spell
                       
                         //Skill 1
-                        if (Aim.Skill1) {
+                        if (State::Aim.Skill1) {
                             if (skillId == 100 * HeroID + 10) {
                                 isDoneAim = true;
                                 orig_TryUseSkill(instance, skillId, targetLockPos, dirDefault, LockPos, bCommonAttack, bAlong, false);
                            }
                         }
 					  //Skill 2
-                        if (Aim.Skill2) {
+                        if (State::Aim.Skill2) {
                             if (skillId == 100 * HeroID + 20 || skillId == 2010520 /*Beatrix Skill2*/) {
                                 isDoneAim = true;
                                 orig_TryUseSkill(instance, skillId, targetLockPos, dirDefault, LockPos, bCommonAttack, bAlong, false);
                            }
                         }
                         //Skill 3
-                        if (Aim.Skill3) {
+                        if (State::Aim.Skill3) {
                             if (skillId == 100 * HeroID + 30 || skillId == 2010530 /*Beatrix Ulti*/) {
                                 isDoneAim = true;
                              orig_TryUseSkill(instance, skillId, targetLockPos, dirDefault, LockPos, bCommonAttack, bAlong, false);                        
@@ -168,7 +166,7 @@ void TryUseSkill(void*instance,int skillId, Vector3 dir, bool dirDefault, Vector
 							 }
                         }
                         //Skill 4
-                        if (Aim.Skill4) {
+                        if (State::Aim.Skill4) {
                             if (skillId == 100 * HeroID + 40) {
                                 isDoneAim = true;
                                 orig_TryUseSkill(instance, skillId, targetLockPos, dirDefault, pos, bCommonAttack, bAlong, false);                                  

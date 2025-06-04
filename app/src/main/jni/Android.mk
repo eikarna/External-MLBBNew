@@ -22,7 +22,7 @@ LOCAL_SRC_FILES := login/library/$(TARGET_ARCH_ABI)/lib/libcrypto.a
 include $(PREBUILT_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE := AkSoundEngine+
+LOCAL_MODULE := AkSoundEngine
 LOCAL_C_INCLUDES += $(LOCAL_PATH)
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/imgui
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/login
@@ -31,6 +31,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/anti/arch/$(TARGET_ARCH_ABI)
 
 LOCAL_CPPFLAGS := -Wno-error=format-security -fvisibility=hidden -fexceptions -std=c++17
 LOCAL_LDLIBS := -llog -landroid -lEGL -lGLESv3 -lz -ldl
+LOCAL_CFLAGS := -w -ferror-limit=999999
 LOCAL_ARM_MODE         := arm
 
 LOCAL_STATIC_LIBRARIES := libdobby \

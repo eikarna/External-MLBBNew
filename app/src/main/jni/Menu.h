@@ -1,463 +1,535 @@
-#include "feature/minimap.h"
+#pragma once
+#include <imgui.h>
+#include <string>
+#include <imgui.h>
+#include <imgui_internal.h> // Untuk ImFormatStringToTempBufferV
+#include "config/JNIStuff.h" // Untuk fungsi JNI
+#include <cstring> // untuk strncpy
+#include <thread>  // untuk std::thread
 
-bool showMenu = true;
-bool bFullChecked = false;
+// ======================
+// Utility Functions
+// ======================
+namespace Utils {
+    [[noreturn]] static void crash(int randomval) {
+      volatile int* p = reinterpret_cast<int*>(0xfa91b9cd);
+      p += randomval;
+      p += *p + randomval;
+      // Perbaikan di bawah ini
+      volatile int* null_ptr = nullptr;
+      *null_ptr = 0; // Force null pointer crash
+    }
 
-unsigned int gpCrash = 0xfa91b9cd;
-static int crash(int randomval){
-    volatile int *p = (int *)gpCrash;
-    p += randomval;
-    p += *p + randomval;
-    /* If it still doesnt crash..crash using null pointer */
-    p = 0;
-    p += *p;
-    return *p;
+    void CenteredText(ImColor color, const char* fmt, ...);
+    ImVec4 RGBA2ImVec4(int r, int g, int b, int a);
 }
 
-void CenteredText(ImColor color, const char *fmt, ...) {
+// ======================
+// Feature Structures
+// ======================
+namespace Features {
+    struct ESP {
+        // Player ESP
+        bool Line = false;
+        bool Round = false;
+        bool Name = false;
+        bool Hero = false;
+        bool Health = false;
+        bool Alert = false;
+
+        // Info ESP
+        bool SkillCD = false;
+        bool SpellCD = false;
+
+        // Jungle ESP
+        bool MRound = false;
+        bool MHealth = false;
+
+        // Minimap
+        bool MinimapIcon = false;
+        bool HideLine = false;
+        int SetAjust = 2;
+    };
+
+    struct Auto {
+        bool SwordLing = false;
+        bool Karina = false;
+        bool GusionSkills = false;
+        bool Gusion = false;
+        bool Gusion2 = false;
+        bool Martis = false;
+        bool Zilong = false;
+    };
+
+    struct Aim {
+        enum TargetMode { CLOSEST, LOWEST_HP, LOWEST_HP_PERCENT };
+        TargetMode Target = CLOSEST;
+        
+        bool AutoTakeSword = false;
+        bool Basic = false;
+        bool Spell = false;
+        bool Skill1 = false;
+        bool Skill2 = false;
+        bool Skill3 = false;
+        bool Skill4 = false;
+    };
+
+    struct AutoRetribution {
+        bool Buff = false;
+        bool Turtle = false;
+        bool Lord = false;
+        bool Creep = false;
+        bool Litho = false;
+    };
+}
+
+struct RoomInfoStruct {
+    struct PlayerInfo {
+        std::string Name;
+        std::string UserID;
+        std::string Verified;
+        std::string Rank;
+        std::string Star;
+        int HeroID;
+        int Spell;
+    } PlayerB[5], PlayerR[5];
+};
+
+namespace ESP {
+    int MinimapPos = 49;
+    int MinimapSize = 227;
+    float ICSize = 20.0f;
+    float ICHealthThin = 1.0f;
+};
+
+// ======================
+// Global State
+// ======================
+namespace State {
+    inline bool showMenu = true;
+    inline bool bFullChecked = false;
+    inline bool UnlockSkins = false;
+    
+    inline Features::ESP ESP;
+    inline Features::Auto Auto;
+    inline Features::Aim Aim;
+    inline Features::AutoRetribution AutoRetribution;
+    
+    inline float SetFieldOfView = 0.0f;
+    inline float RangeFOV = 15.0f;
+}
+
+// ======================
+// UI Components
+// ======================
+namespace UISystem {
+    void HideMenu(bool& bShow);
+    void RenderLoginTab(char* userKeyBuffer, bool* isLogin, std::string& loginMessage); // Fixed
+                                                              void RenderSettingsTab(float& windowScale, bool& autoResize, bool& showHideConfirm); // Fixed
+    void RenderVisualTab();
+    void RenderHelperTab();
+    void RenderRoomInfoTab();
+    void ShowMenu();
+}
+
+// ======================
+// Thread Functions
+// ======================
+namespace Threads {
+    void LoginThread(const std::string& user_key, bool* success);
+    void LoadBattleData();
+}
+
+// ======================
+// Utils Implementation
+// ======================
+void Utils::CenteredText(ImColor color, const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    const char *text, *text_end;
+    const char* text, *text_end;
     ImFormatStringToTempBufferV(&text, &text_end, fmt, args);
-    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(text, text_end).x) * 0.5);
+    ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(text, text_end).x) * 0.5f);
     ImGui::TextColoredV(color, fmt, args);
     va_end(args);
 }
 
-inline ImVec4 RGBA2ImVec4(int r, int g, int b, int a) {
-    float newr = (float)r / 255.0f;
-    float newg = (float)g / 255.0f;
-    float newb = (float)b / 255.0f;
-    float newa = (float)a / 255.0f;
-    return ImVec4(newr, newg, newb, newa);
+ImVec4 Utils::RGBA2ImVec4(int r, int g, int b, int a) {
+    return ImVec4(r/255.0f, g/255.0f, b/255.0f, a/255.0f);
 }
 
-struct sFeature {
-    //ESP Player
-    bool ESPLine;
-    bool ESPRound;
-    bool ESPName;
-	bool ESPHero;
-    bool ESPHealth;
-    bool ESPAlert;
+// ======================
+// Threads Implementation
+// ======================
+void Threads::LoginThread(const std::string& user_key, bool* success) {
+    // Asumsikan Login() didefinisikan di tempat lain
+    std::string message = Login(g_vm, user_key.c_str(), success);
+    // Handle thread-safe message passing jika diperlukan
+}
 
-    //ESP Info
-    bool ESPSkillCD;
-    bool ESPSpellCD;
+void Threads::LoadBattleData() {
+    loadBattleData(); // Fungsi eksternal
+    State::bFullChecked = true;
+}
 
-    //ESP Jungle
-    bool ESPMRound;
-    bool ESPMHealth;
-	
-	//Minimap
-	bool MinimapIcon2;
-	bool MinimapIcon1;
-    bool MinimapIcon;
-    bool HideLine;
-	int SetAjust=2;
-	bool TrySkill = false;
-};
-struct sAuto {
-		bool SwordLing;
-		bool Karina;
-		bool Gusion;
-		bool Gusion2;
-		bool Martis;
-		bool Zilong;
-        };
- sAuto Auto{0};
-struct sAim {
-		int Target;	
-		bool AutoTakeSword;
-		    bool Basic;
-            bool Spell;
-            bool Skill1;
-            bool Skill2;
-            bool Skill3;
-            bool Skill4;
-        };
- sAim Aim{0};
-sFeature Feature{0};
-struct sAutoRetribution {
-			bool Buff;
-            bool Turtle;
-			bool Lord;
-			bool Creep;
-			bool Litho;
-			bool Buf1;
-            bool Turtl1;
-			bool Lor1;
-			bool Cree1;
-			bool Lith1;
-        };
- sAutoRetribution AutoRetribution{0};
- 
- 
-static float SetFieldOfView = 0, GetFieldOfView = 0;
-static float RangeFOV = 15.0f;
-void HideMenu(bool& bShow) {
-    if (bShow) {
-        ImGui::OpenPopup("ConfirmHide");
-    }
+// ======================
+// UI Implementation
+// ======================
+void UISystem::HideMenu(bool& bShow) {
+    if (bShow) ImGui::OpenPopup("ConfirmHide");
 
-    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x / 2, ImGui::GetIO().DisplaySize.y / 2), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-    if (ImGui::BeginPopupModal("ConfirmHide", 0, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse))
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, 
+                                  ImGui::GetIO().DisplaySize.y * 0.5f), 
+                           ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+    
+    if (ImGui::BeginPopupModal("ConfirmHide", nullptr, 
+        ImGuiWindowFlags_AlwaysAutoResize | 
+        ImGuiWindowFlags_NoMove | 
+        ImGuiWindowFlags_NoTitleBar | 
+        ImGuiWindowFlags_NoCollapse)) 
     {
         ImGui::Text("Are you sure you want to hide the menu?");
-        if (ImGui::Button("Yes", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0)))
-        {
-            showMenu = false;
+        
+        if (ImGui::Button("Yes", ImVec2(120, 0))) {
+            State::showMenu = false;
             bShow = false;
             ImGui::CloseCurrentPopup();
         }
+        
         ImGui::SameLine();
-        if (ImGui::Button("No", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
-        {
+        
+        if (ImGui::Button("No", ImVec2(120, 0))) {
             bShow = false;
             ImGui::CloseCurrentPopup();
         }
+        
         ImGui::EndPopup();
     }
 }
 
-std::string msg;
-void LoginThread(const std::string &user_key, bool *success) {
-    msg = Login(g_vm, user_key.c_str(), success);
+void UISystem::RenderLoginTab(char* userKeyBuffer, bool* isLogin, std::string& loginMessage) {
+    if (ImGui::BeginTabItem("Login Menu")) {
+        ImGui::BeginGroupPanel("Please Login! (Copy Key to Clipboard)", ImVec2(0.0f, 0.0f));
+        
+        // Input text
+        ImGui::PushItemWidth(-1);
+        ImGui::InputText("##key", userKeyBuffer, 64);
+        ImGui::PopItemWidth();
+
+        // Button layout
+        if (ImGui::Button("Paste Key", ImVec2(ImGui::GetContentRegionAvail().x * 0.5f, 0))) {
+            std::string key = getClipboardText(g_vm);
+            strncpy(userKeyBuffer, key.c_str(), 63);
+        }
+        ImGui::SameLine();
+        
+        if (ImGui::Button("Load Saved Key", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+            // Implement saved key loading
+        }
+        
+        if (ImGui::Button("Login", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
+            std::thread(Threads::LoginThread, std::string(userKeyBuffer), isLogin).detach();
+        }
+        
+        // Status message
+        if (!loginMessage.empty()) {
+            ImGui::TextColored(Utils::RGBA2ImVec4(255, 255, 0, 255), "%s", loginMessage.c_str());
+        }
+        
+        ImGui::EndGroupPanel();
+        ImGui::EndTabItem();
+    }
 }
 
-void ShowMenu()
-{
-    const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 650, main_viewport->WorkPos.y + 20), ImGuiCond_FirstUseEver);
+void UISystem::RenderVisualTab() {
+    if (!ImGui::BeginTabItem("Visual Menu")) return;
+
+    // Player ESP Section
+    ImGui::BeginGroupPanel("Player ESP", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Line", &State::ESP.Line);
+        ImGui::Checkbox("Round", &State::ESP.Round);
+        ImGui::Checkbox("Name", &State::ESP.Name);
+        ImGui::Checkbox("Hero", &State::ESP.Hero);
+        ImGui::Checkbox("Health", &State::ESP.Health);
+    }
+    ImGui::EndGroupPanel();
+
+    // Jungle ESP Section
+    ImGui::BeginGroupPanel("Jungle ESP", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Round", &State::ESP.MRound);
+        ImGui::SameLine();
+        ImGui::Checkbox("Health", &State::ESP.MHealth);
+    }
+    ImGui::EndGroupPanel();
+
+    // Info ESP Section
+    ImGui::BeginGroupPanel("Info ESP", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Skill CD", &State::ESP.SkillCD);
+        ImGui::Checkbox("Spell CD", &State::ESP.SpellCD);
+        ImGui::Checkbox("Hero Alert", &State::ESP.Alert);
+    }
+    ImGui::EndGroupPanel();
+
+    // Minimap Section
+    ImGui::BeginGroupPanel("Minimap Settings", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Show Minimap Icons", &State::ESP.MinimapIcon);
+        ImGui::SliderInt("Position", &ESP::MinimapPos, 0, 400);
+        ImGui::SliderInt("Size", &ESP::MinimapSize, 0, 600);
+        ImGui::SliderFloat("Icon Size", &ICSize, 20, 40, "%.1f");
+        ImGui::SliderFloat("Health Thickness", &ICHealthThin, 1, 5, "%.1f");
+    }
+    ImGui::EndGroupPanel();
+
+    // Camera Section
+    ImGui::BeginGroupPanel("Camera Settings", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::SliderFloat("Drone View", &State::SetFieldOfView, 0, 30, "%.1f");
+    }
+    ImGui::EndGroupPanel();
+
+    ImGui::EndTabItem();
+}
+
+void UISystem::RenderHelperTab() {
+    if (!ImGui::BeginTabItem("Helper Menu")) return;
+
+    // Jungle Retribution Section
+    ImGui::BeginGroupPanel("Auto Retribution", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Buff", &State::AutoRetribution.Buff);
+        ImGui::SameLine();
+        ImGui::Checkbox("Turtle", &State::AutoRetribution.Turtle);
+        ImGui::SameLine();
+        ImGui::Checkbox("Lord", &State::AutoRetribution.Lord);
+        ImGui::Checkbox("Crab", &State::AutoRetribution.Creep);
+        ImGui::SameLine();
+        ImGui::Checkbox("Lithowanderer", &State::AutoRetribution.Litho);
+    }
+    ImGui::EndGroupPanel();
+
+    // Auto Aim Section
+    ImGui::BeginGroupPanel("Auto Aim", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Basic Attack", &State::Aim.Basic);
+        ImGui::SameLine();
+        ImGui::Checkbox("Battle Spell", &State::Aim.Spell);
+        ImGui::Columns(2, nullptr, false);
+        ImGui::Checkbox("Skill 1", &State::Aim.Skill1);
+        ImGui::NextColumn();
+        ImGui::Checkbox("Skill 2", &State::Aim.Skill2);
+        ImGui::Columns(1);
+        ImGui::Columns(2, nullptr, false);
+        ImGui::Checkbox("Skill 3", &State::Aim.Skill3);
+        ImGui::NextColumn();
+        ImGui::Checkbox("Skill 4", &State::Aim.Skill4);
+        ImGui::Columns(1);
+    }
+    ImGui::EndGroupPanel();
+
+    // Hero-specific Automation
+    ImGui::BeginGroupPanel("Hero Automation", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Ling: Manual Sword", &State::Aim.AutoTakeSword);
+        ImGui::SameLine();
+        ImGui::Checkbox("Auto Sword", &State::Auto.SwordLing);
+        ImGui::Checkbox("Karina Combo", &State::Auto.Karina);
+        ImGui::SameLine();
+        ImGui::Checkbox("Gusion Combo", &State::Auto.Gusion);
+        ImGui::Checkbox("Martis Ult", &State::Auto.Martis);
+        ImGui::SameLine();
+        ImGui::Checkbox("Zilong Charge", &State::Auto.Zilong);
+    }
+    ImGui::EndGroupPanel();
+
+    // Targeting Logic
+    ImGui::BeginGroupPanel("Target Selection", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::RadioButton("Closest", reinterpret_cast<int*>(&State::Aim.Target), Features::Aim::CLOSEST);
+        ImGui::RadioButton("Lowest HP", reinterpret_cast<int*>(&State::Aim.Target), Features::Aim::LOWEST_HP);
+        ImGui::RadioButton("Lowest % HP", reinterpret_cast<int*>(&State::Aim.Target), Features::Aim::LOWEST_HP_PERCENT);
+        ImGui::SliderFloat("Detection Range", &State::RangeFOV, 0, 200, "%.1f m");
+    }
+    ImGui::EndGroupPanel();
+
+    ImGui::EndTabItem();
+}
+
+// Implementasi fungsi lainnya (RenderRoomInfoTab, RenderSettingsTab, ShowMenu)...
+void UISystem::RenderRoomInfoTab() {
+    if (!ImGui::BeginTabItem("Room Info")) return;
+
+    // Pastikan data sudah dimuat
+    if (!State::bFullChecked) {
+        Threads::LoadBattleData();
+    }
+
+    // Tampilkan informasi ruangan
+    RoomInfoList();  // Fungsi eksternal
+
+    // Tampilkan tim sendiri (Biru)
+    ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), "Team");
+    if (ImGui::BeginTable("##Team", 7, 
+        ImGuiTableFlags_BordersOuter | 
+        ImGuiTableFlags_BordersInner | 
+        ImGuiTableFlags_ScrollY, 
+        ImVec2(0, 200))) 
+    {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed, 100);
+        ImGui::TableSetupColumn("Verified", ImGuiTableColumnFlags_WidthFixed, 80);
+        ImGui::TableSetupColumn("Rank", ImGuiTableColumnFlags_WidthFixed, 80);
+        ImGui::TableSetupColumn("Star", ImGuiTableColumnFlags_WidthFixed, 60);
+        ImGui::TableSetupColumn("Hero", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Spell", ImGuiTableColumnFlags_WidthFixed, 80);
+        ImGui::TableHeadersRow();
+        
+        for (int row = 0; row < 5; row++) {
+            ImGui::TableNextRow();
+            for (int column = 0; column < 7; column++) {
+                ImGui::TableSetColumnIndex(column);
+                switch (column) {
+                    case 0: ImGui::Text("%s", RoomInfo.PlayerB[row].Name.c_str()); break;
+                    case 1: ImGui::Text("%s", RoomInfo.PlayerB[row].UserID.c_str()); break;
+                    case 2: ImGui::Text("%s", RoomInfo.PlayerB[row].Verified.c_str()); break;
+                    case 3: ImGui::Text("%s", RoomInfo.PlayerB[row].Rank.c_str()); break;
+                    case 4: ImGui::Text("%s", RoomInfo.PlayerB[row].Star.c_str()); break;
+                    case 5: RoomInfoHero(RoomInfo.PlayerB[row].HeroID); break;
+                    case 6: RoomInfoSpell(RoomInfo.PlayerB[row].Spell); break;
+                }
+            }
+        }
+        ImGui::EndTable();
+    }
+
+    // Tampilkan tim lawan (Merah)
+    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Enemy");
+    if (ImGui::BeginTable("##Enemy", 7, 
+        ImGuiTableFlags_BordersOuter | 
+        ImGuiTableFlags_BordersInner | 
+        ImGuiTableFlags_ScrollY, 
+        ImVec2(0, 200))) 
+    {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed, 100);
+        ImGui::TableSetupColumn("Verified", ImGuiTableColumnFlags_WidthFixed, 80);
+        ImGui::TableSetupColumn("Rank", ImGuiTableColumnFlags_WidthFixed, 80);
+        ImGui::TableSetupColumn("Star", ImGuiTableColumnFlags_WidthFixed, 60);
+        ImGui::TableSetupColumn("Hero", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Spell", ImGuiTableColumnFlags_WidthFixed, 80);
+        ImGui::TableHeadersRow();
+        
+        for (int row = 0; row < 5; row++) {
+            ImGui::TableNextRow();
+            for (int column = 0; column < 7; column++) {
+                ImGui::TableSetColumnIndex(column);
+                switch (column) {
+                    case 0: ImGui::Text("%s", RoomInfo.PlayerR[row].Name.c_str()); break;
+                    case 1: ImGui::Text("%s", RoomInfo.PlayerR[row].UserID.c_str()); break;
+                    case 2: ImGui::Text("%s", RoomInfo.PlayerR[row].Verified.c_str()); break;
+                    case 3: ImGui::Text("%s", RoomInfo.PlayerR[row].Rank.c_str()); break;
+                    case 4: ImGui::Text("%s", RoomInfo.PlayerR[row].Star.c_str()); break;
+                    case 5: RoomInfoHero(RoomInfo.PlayerR[row].HeroID); break;
+                    case 6: RoomInfoSpell(RoomInfo.PlayerR[row].Spell); break;
+                }
+            }
+        }
+        ImGui::EndTable();
+    }
+
+    ImGui::EndTabItem();
+}
+
+void UISystem::RenderSettingsTab(float& windowScale, bool& autoResize, bool& showHideConfirm) {
+    if (!ImGui::BeginTabItem("Settings")) return;
+
+    // Menu Settings
+    ImGui::BeginGroupPanel("Menu Settings", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::Checkbox("Unlock All Skins", &State::UnlockSkins);
+        ImGui::Checkbox("Auto Resize Window", &autoResize);
+        
+        // Window Scale
+        ImGui::BeginGroupPanel("Window Scale", ImVec2(0.0f, 0.0f));
+        ImGui::SliderFloat("##Scale", &windowScale, 0.5f, 1.5f, "%.1f");
+        ImGui::EndGroupPanel();
+        
+        // Hide Menu Button
+        if (ImGui::Button("Hide Menu", ImVec2(0.0f, 0.0f))) {
+            showHideConfirm = true;
+        }
+    }
+    ImGui::EndGroupPanel();
+
+    // Instructions
+    ImGui::BeginGroupPanel("English Instructions", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::TextColored(Utils::RGBA2ImVec4(255, 255, 0, 255), "To display the menu again,");
+        ImGui::TextColored(Utils::RGBA2ImVec4(255, 255, 0, 255), "touch the lower left corner of your screen");
+    }
+    ImGui::EndGroupPanel();
+
+    ImGui::BeginGroupPanel("Instruksi Bahasa Indonesia", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::TextColored(Utils::RGBA2ImVec4(255, 255, 0, 255), "Untuk menampilkan menu kembali,");
+        ImGui::TextColored(Utils::RGBA2ImVec4(255, 255, 0, 255), "sentuh pojok kiri bawah layar Anda");
+    }
+    ImGui::EndGroupPanel();
+
+    // Additional Features
+    ImGui::BeginGroupPanel("Experimental Features", ImVec2(0.0f, 0.0f));
+    {
+        ImGui::TextWrapped("Note: These features are still in testing phase");
+        if (ImGui::Button("Clear Cache", ImVec2(0.0f, 0.0f))) {
+            // Implement cache clearing
+        }
+    }
+    ImGui::EndGroupPanel();
+
+    ImGui::EndTabItem();
+}
+
+// Implementasi utama ShowMenu
+void UISystem::ShowMenu() {
+    if (!State::showMenu) return;
+
+    // Setup window
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + 650, viewport->WorkPos.y + 20), 
+                           ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(650, 680), ImGuiCond_FirstUseEver);
 
-    ImGuiIO& io = ImGui::GetIO();
-
-    static float window_scale;
-    if (!window_scale) window_scale = 1.0f;
-    io.FontGlobalScale = window_scale;
-
-    static bool isLogin = false, isSave = false;
-    static char s[64];
-    if (isLogin && !isSave) {
-        isSave = true;
-		pthread_t t;
-		loadBattleData();
-		bFullChecked = true;
-    }
-
-    static bool isPopUpHide = false;
-    HideMenu(isPopUpHide);
+    // State management
+    static bool isLogin = false;
+    static char userKey[64] = "";
+    static std::string loginMsg;
+    static float windowScale = 1.0f;
+    static bool autoResize = true;
+    static bool showHideConfirm = false;
     
-    static bool bFlagAutoResize = true;
-    static ImGuiWindowFlags window_flags;
-    if (bFlagAutoResize) {
-        window_flags = ImGuiWindowFlags_AlwaysAutoResize;
-    } else {
-        window_flags = ImGuiWindowFlags_None;
-    }
+    ImGui::GetIO().FontGlobalScale = windowScale;
 
-	if (isLogin && title != "") {
-		pthread_t t;
-		loadBattleData();
-		bFullChecked = true;
-	}
-	
-	std::string FULLTITLE = std::string(OBFUSCATE("VIP STRONG")) + std::string(" | ") + std::string(" | V1.0") + std::string(" ") + std::string(ABI);
-    if (!ImGui::Begin(FULLTITLE.c_str(), 0, window_flags))
-    {
-        ImGui::End();
-        return;
-    }
+    // Hide confirmation modal
+    HideMenu(showHideConfirm);
 
+    // Window rendering
+    ImGui::Begin("Nisaki | V1.0", nullptr, 
+                autoResize ? ImGuiWindowFlags_AlwaysAutoResize : ImGuiWindowFlags_None);
+    
     if (!isLogin) {
-        if (ImGui::BeginTabBar("TabLogin", ImGuiTabBarFlags_FittingPolicyScroll)) {
-            if (ImGui::BeginTabItem("Login Menu")) {
-                ImGui::BeginGroupPanel("Please Login! (Copy Key to Clipboard)", ImVec2(0.0f, 0.0f));
-                {
-                    ImGui::PushItemWidth(-1);
-                    ImGui::InputText("##key", s, sizeof s);
-                    ImGui::PopItemWidth();
-
-                    if (ImGui::Button("Paste Key", ImVec2(ImGui::GetContentRegionAvail().x / 2, 0))) {
-                        auto key = getClipboardText(g_vm);
-                        strncpy(s, key.c_str(), sizeof s);
-                    }
-
-                    ImGui::SameLine();
-
-                    if (ImGui::Button("Load Saved Key", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
-                    }
-
-                    if (ImGui::Button("Login", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
-                        std::thread login_thread(LoginThread, std::string(s), &isLogin);
-                        login_thread.detach();
-                    }
-
-                    ImGui::TextColored(RGBA2ImVec4(255, 255, 0, 255), "%s", msg.c_str());
-                    ImGui::Spacing();
-                }
-                ImGui::EndGroupPanel();
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
-        }
+        ImGui::BeginTabBar("AuthTabs");
+        RenderLoginTab(userKey, &isLogin, loginMsg);
+        ImGui::EndTabBar();
     } else {
-        if (ImGui::BeginTabBar("Tab", ImGuiTabBarFlags_FittingPolicyScroll)) {
-         
-			if (ImGui::BeginTabItem("Visual Menu")) {
-                ImGui::BeginGroupPanel("Player ESP", ImVec2(0.0f, 0.0f));
-                {
-                    ImGui::Checkbox("Line", &Feature.ESPLine);
-                    ImGui::Checkbox("Round", &Feature.ESPRound);
-                    ImGui::Checkbox("Name", &Feature.ESPName);
-					ImGui::Checkbox("Hero", &Feature.ESPHero);
-                    ImGui::Checkbox("Health", &Feature.ESPHealth);
-                 //   ImGui::Checkbox("Esp Minimap icon", &Feature.MinimapIcon);
-					
-					ImGui::Spacing();
-                }
-                ImGui::EndGroupPanel();
-
-                ImGui::SameLine();
-
-                ImGui::BeginGroup();
-                {
-                    ImGui::BeginGroupPanel("Jungle ESP", ImVec2(-1.0f, 0.0f));
-                    {
-                        ImGui::Checkbox("ESP Round", &Feature.ESPMRound);
-						ImGui::SameLine();
-                        ImGui::Checkbox("ESP Health", &Feature.ESPMHealth);
-                        ImGui::Spacing();
-                    }
-                    ImGui::EndGroupPanel();
-
-                    ImGui::BeginGroupPanel("Info ESP", ImVec2(-1.0f, 0.0f));
-                    {
-						ImGui::Checkbox("Skill CD", &Feature.ESPSkillCD);
-                        ImGui::Checkbox("Spell CD", &Feature.ESPSpellCD);
-                        ImGui::Checkbox("Show Hero Alert", &Feature.ESPAlert);
-                      
-						ImGui::Spacing();
-                    }
-                    ImGui::EndGroupPanel();
-                }
-                ImGui::EndGroup();
-				
-				  
-				ImGui::BeginGroupPanel("Esp MiniMap", ImVec2(-1.0f, 0.0f));
-                    {
-				ImGui::Checkbox("ESP MiniMap", &Feature.MinimapIcon);
-					
-			ImGui::Text("Map Size:");
-			ImGui::SliderInt("Pos", &ESP::MinimapPos, 0, 400);
-            ImGui::SliderInt("Size", &ESP::MinimapSize, 0, 600);
-            ImGui::Text("Icon Size:");
-				   ImGui::SliderFloat("##ICSize", &ICSize, 20, 40, "%.1f");
-				   ImGui::SliderFloat("##ICHealthThin", &ICHealthThin, 1, 5, "%.1f");
-				 
-						ImGui::Spacing();
-                    }
-                    ImGui::EndGroupPanel();
-             
-				
-				ImGui::BeginGroupPanel("Additional", ImVec2(-1.0f, 0.0f));
-                {
-						
-				 ImGui::Text("Drone View:");
-                   ImGui::SliderFloat("##DroneView", &SetFieldOfView, 0, 30, "%.1f");
-                   
-					ImGui::Spacing();
-                }
-                ImGui::EndGroupPanel();
-	
-ImGui::EndTabItem();
-            }
-			
-if (ImGui::BeginTabItem("Helper Menu")) {
-	     ImGui::BeginGroupPanel("Jungle Retribution", ImVec2(-1.0f, 0.0f));
-                    {
-			   ImGui::Checkbox("Buff", &AutoRetribution.Buff);
-				ImGui::SameLine();
-				ImGui::Checkbox("Turtle", &AutoRetribution.Turtle);
-				ImGui::SameLine();
-                ImGui::Checkbox("Lord", &AutoRetribution.Lord);
-				ImGui::SameLine();
-				ImGui::Checkbox("Crab", &AutoRetribution.Creep);
-				ImGui::SameLine();
-				ImGui::Checkbox("Litho", &AutoRetribution.Litho);
-				ImGui::Spacing();
-                    }
-                    ImGui::EndGroupPanel();
-					ImGui::BeginGroupPanel("Auto Aim", ImVec2(-1.0f, 0.0f));
-                    {
-			   
-				
-                ImGui::Checkbox("Skill 1", &Aim.Skill1);
-				ImGui::SameLine();
-                ImGui::Checkbox("Skill 2", &Aim.Skill2);
-				
-                ImGui::Checkbox("Skill 3", &Aim.Skill3);
-				ImGui::SameLine();
-                ImGui::Checkbox("Skill 4", &Aim.Skill4);
-			
-				ImGui::Checkbox("Aim Spell", &Aim.Spell);
-			    ImGui::SameLine();
-                ImGui::Checkbox("Basic Attack", &Aim.Basic);
-				
-				ImGui::Checkbox("Ling Manual TakeSword", &Aim.AutoTakeSword);
-				ImGui::SameLine();
-				ImGui::Checkbox("Karina Auto Combo", &Auto.Karina);
-				
-				ImGui::Checkbox("Ling Auto TakeSword", &Auto.SwordLing);
-				ImGui::SameLine();
-				ImGui::Checkbox("Gusion Auto Combo", &GusionSkills);
-				
-				ImGui::Checkbox("Martis Auto Skill3", &Auto.Martis);
-				ImGui::SameLine();
-				ImGui::Checkbox("Zilong Auto Skill2", &Auto.Zilong);
-				
-                 ImGui::Spacing();
-				}
-                    ImGui::EndGroupPanel();
-					
-					ImGui::BeginGroupPanel("Targert Lock", ImVec2(-1.0f, 0.0f));
-                    {
-				ImGui::RadioButton("Closest Distance", &Aim.Target, 0);
-				ImGui::RadioButton("Lowest HP", &Aim.Target, 1);
-				ImGui::RadioButton("Lowest HP Percentage", &Aim.Target, 2);
-				ImGui::Text("Range Auto Aim:");
-			    ImGui::SliderFloat("##RangeFOV", &RangeFOV, 0, 200, "%.1fm");
-                ImGui::Spacing();
-					
-                    }
-                    ImGui::EndGroupPanel();
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Room Info")) {
-				if (bFullChecked) RoomInfoList();
-                ImGui::TextColored(ImVec4(0.0f, 0.8f, 1.0f, 1.0f), "Team");
-                if (ImGui::BeginTable("##Team", 7, ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInner)) {
-                    ImGui::TableSetupColumn("Name");
-					ImGui::TableSetupColumn("ID");
-                    ImGui::TableSetupColumn("Verified");
-                    ImGui::TableSetupColumn("Rank");
-                    ImGui::TableSetupColumn("Star");
-					ImGui::TableSetupColumn("Hero");
-					ImGui::TableSetupColumn("Spell");
-                    ImGui::TableHeadersRow();
-                    for (int row = 0; row < 5; row++) {
-                        ImGui::TableNextRow();
-                        for (int column = 0; column < 7; column++) {
-                            ImGui::TableSetColumnIndex(column);
-                            char buf[32];
-                            if (column == 0) {
-                                sprintf(buf, "%s", RoomInfo.PlayerB[row].Name.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 1) {
-                                sprintf(buf, "%s", RoomInfo.PlayerB[row].UserID.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 2) {
-                                sprintf(buf, "%s", RoomInfo.PlayerB[row].Verified.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 3) {
-                                sprintf(buf, "%s", RoomInfo.PlayerB[row].Rank.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 4) {
-                                sprintf(buf, "%s", RoomInfo.PlayerB[row].Star.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 5) {
-                                RoomInfoHero(RoomInfo.PlayerB[row].HeroID);
-                            } else if (column == 6) {
-                                RoomInfoSpell(RoomInfo.PlayerB[row].Spell);
-                            }
-                        }
-                    }
-                    ImGui::EndTable();
-                }
-                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Enemy");
-                if (ImGui::BeginTable("##Enemy", 7, ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersInner)) {
-                    ImGui::TableSetupColumn("Name");
-					ImGui::TableSetupColumn("ID");
-                    ImGui::TableSetupColumn("Verified");
-                    ImGui::TableSetupColumn("Rank");
-                    ImGui::TableSetupColumn("Star");
-					ImGui::TableSetupColumn("Hero");
-					ImGui::TableSetupColumn("Spell");
-                    ImGui::TableHeadersRow();
-                    for (int row = 0; row < 5; row++) {
-                        ImGui::TableNextRow();
-                        for (int column = 0; column < 7; column++) {
-                            ImGui::TableSetColumnIndex(column);
-                            char buf[32];
-                            if (column == 0) {
-                                sprintf(buf, "%s", RoomInfo.PlayerR[row].Name.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 1) {
-                                sprintf(buf, "%s", RoomInfo.PlayerR[row].UserID.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 2) {
-                                sprintf(buf, "%s", RoomInfo.PlayerR[row].Verified.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 3) {
-                                sprintf(buf, "%s", RoomInfo.PlayerR[row].Rank.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 4) {
-                                sprintf(buf, "%s", RoomInfo.PlayerR[row].Star.c_str());
-                                ImGui::TextUnformatted(buf);
-                            } else if (column == 5) {
-                                RoomInfoHero(RoomInfo.PlayerR[row].HeroID);
-                            } else if (column == 6) {
-                                RoomInfoSpell(RoomInfo.PlayerR[row].Spell);
-                            }
-                        }
-                    }
-                    ImGui::EndTable();
-                }
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem("Setting")) {
-                ImGui::BeginGroupPanel("Menu Setting", ImVec2(-1.0f, 0.0f));
-                {
-					ImGui::Checkbox("Unlock All Skin", &UnlockSkins);
-                        
-                    ImGui::Checkbox("Auto Resize", &bFlagAutoResize);
-                    ImGui::BeginGroupPanel("Window Size", ImVec2(-1.0f, 0.0f));
-                    {
-                        ImGui::PushItemWidth(-1);
-                        ImGui::SliderFloat("##Scale", &window_scale, 0.5f, 1.5f, "%.1f");
-                        ImGui::PopItemWidth();
-                        ImGui::Spacing();
-                    }
-                    ImGui::EndGroupPanel();
-
-                    if (ImGui::Button("Hide Menu", ImVec2(ImGui::GetContentRegionAvail().x, 0))) {
-                        isPopUpHide = true;
-                    }
-
-                    ImGui::BeginGroupPanel("English", ImVec2(-1.0f, 0.0f));
-                    {
-                        ImGui::TextColored(RGBA2ImVec4(255, 255, 0, 255), "To display the menu again,");
-                        ImGui::TextColored(RGBA2ImVec4(255, 255, 0, 255), "simply touch on the lower left corner of your screen.");
-                        ImGui::Spacing();
-                    }
-                    ImGui::EndGroupPanel();
-
-                    ImGui::BeginGroupPanel("Indonesia", ImVec2(-1.0f, 0.0f));
-                    {
-                        ImGui::TextColored(RGBA2ImVec4(255, 255, 0, 255), "Untuk menampilkan kembali menu,");
-                        ImGui::TextColored(RGBA2ImVec4(255, 255, 0, 255), "cukup sentuh di pojok kiri bawah layar Anda.");
-                        ImGui::Spacing();
-                    }
-                    ImGui::EndGroupPanel();
-
-                    ImGui::Spacing();
-                }
-                ImGui::EndGroupPanel();
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
-        }
+        ImGui::BeginTabBar("MainTabs");
+        RenderVisualTab();
+        RenderHelperTab();
+        RenderRoomInfoTab();
+        RenderSettingsTab(windowScale, autoResize, showHideConfirm);
+        ImGui::EndTabBar();
     }
+    
+    ImGui::End();
 }
-

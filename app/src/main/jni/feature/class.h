@@ -70,12 +70,14 @@ void loadBattleData() {
 #define BattleManager_m_dicMonsterShow (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "", "BattleManager", "m_dicMonsterShow")
 #define BattleManager_m_dicPlayerShow (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "", "BattleManager", "m_dicPlayerShow")
 #define LogicPlayer_KillWildTimes (uintptr_t) Il2CppGetFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE("Battle"), OBFUSCATE("LogicPlayer"), OBFUSCATE("_KillWildTimes"))
+#define LogicPlayer_dicTalentSkill (uintptr_t) Il2CppGetFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE("Battle"), OBFUSCATE("LogicPlayer"), OBFUSCATE("_dicTalentSkill"))
 
 #define ShowEntity_Position (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "", "ShowEntity", "_Position")
 #define ShowEntity_bShowEntityLayer (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "", "ShowEntity", "bShowEntityLayer")
 #define ShowEntity_m_RoleName (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "", "ShowEntity", "m_RoleName")
 #define EntityBase_m_ID (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "Battle", "ShowEntityBase", OBFUSCATE("m_ID"))
 #define EntityBase_m_Level (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "Battle", "ShowEntityBase", OBFUSCATE("m_Level"))
+#define M_BasePhyAtt (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "Battle", "ShowEntityBase", OBFUSCATE("m_BasePhyAtt"))
 #define EntityBase_m_bDeath (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "Battle", "ShowEntityBase", OBFUSCATE("<m_bDeath>k__BackingField"))
 #define EntityBase_m_bSameCampType (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "Battle", "ShowEntityBase", OBFUSCATE("m_bSameCampType"))
 #define EntityBase_m_Hp (uintptr_t) Il2CppGetFieldOffset("Assembly-CSharp.dll", "Battle", "ShowEntityBase", OBFUSCATE("m_Hp"))
@@ -167,6 +169,9 @@ bool bMonster(int iValue) {
 #define BattleManager_m_dicPlayerShow (uintptr_t) Il2CppGetFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("BattleManager"), OBFUSCATE("m_dicPlayerShow"))
 #define BattleManager_m_dicMonsterShow (uintptr_t) Il2CppGetFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("BattleManager"), OBFUSCATE("m_dicMonsterShow"))
 
+//Class SystemData
+#define SystemData_m_uiID (uintptr_t) Il2CppGetFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("SystemData"), OBFUSCATE("m_uiID"))
+
 //Class ShowEntity
 #define ShowEntity_Position (uintptr_t) Il2CppGetFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("ShowEntity"), OBFUSCATE("_Position"))
 #define ShowEntity_bShowEntityLayer (uintptr_t) Il2CppGetFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("ShowEntity"), OBFUSCATE("bShowEntityLayer"))
@@ -218,6 +223,7 @@ int GetCoolTime(void* instance) {
 #define LogicBattleManager_Instance (uintptr_t) Il2CppGetStaticFieldOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("LogicBattleManager"), OBFUSCATE("Instance"))
 #define LogicBattleManager_GetPlayerLogic (uintptr_t) Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("LogicBattleManager"), OBFUSCATE("GetPlayerLogic"), 1)
 #define LogicBattleManager_GetBattleState (uintptr_t) Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("LogicBattleManager"), OBFUSCATE("GetBattleState"))
+#define LogicBattleManager_GetBattlePlayerInfo (uintptr_t) Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("LogicBattleManager"), OBFUSCATE("GetBattlePlayerInfo"))
 #define LogicBattleManager_GetPlayerRealSelf (uintptr_t) Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE(""), OBFUSCATE("LogicBattleManager"), OBFUSCATE("GetPlayerRealSelf"))
 
 uintptr_t GetPlayerLogic(uint id) {
@@ -230,6 +236,12 @@ int GetBattleState() {
     auto instance = *(uintptr_t *) ((uintptr_t)LogicBattleManager_Instance);
     if (!instance) return 0;
     return reinterpret_cast<int(__fastcall *)(void*)>(LogicBattleManager_GetBattleState)((void*)instance);
+}
+
+List<uintptr_t>* GetBattlePlayerInfo() {
+  auto instance = *(uintptr_t *) ((uintptr_t)LogicBattleManager_Instance);
+  if (!instance) return 0;
+  return reinterpret_cast<List<uintptr_t>*(__fastcall *)(void*)>(LogicBattleManager_GetBattlePlayerInfo)((void *)instance);
 }
 
 uintptr_t GetPlayerRealSelf() {

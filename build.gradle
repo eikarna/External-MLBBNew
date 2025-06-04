@@ -1,28 +1,21 @@
 buildscript {
-    ext.build_gradle_version = '3.6.1'
-
+    ext.build_gradle_version = '8.3.0'
     repositories {
         maven { url 'https://maven.aliyun.com/repository/public/' }
         maven { url 'https://maven.aliyun.com/repository/google/' }
         maven { url 'https://maven.aliyun.com/repository/gradle-plugin/' }
-        maven { url 'https://dl.bintray.com/ppartisan/maven/' }
-        maven { url "https://clojars.org/repo/" }
-        maven { url "https://jitpack.io" }
         google()
-        mavenLocal()
         mavenCentral()
     }
     dependencies {
         classpath "com.android.tools.build:gradle:$build_gradle_version"
-        
     }
-    
 }
+
 allprojects {
     repositories {
         maven { url 'https://maven.aliyun.com/repository/public/' } 
         maven { url 'https://maven.aliyun.com/repository/google/' }
-        maven { url 'https://maven.aliyun.com/repository/gradle-plugin/' }
         maven { url 'https://dl.bintray.com/ppartisan/maven/' }
         maven { url "https://clojars.org/repo/" }
         maven { url "https://jitpack.io" }
@@ -32,6 +25,6 @@ allprojects {
     }
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
 }

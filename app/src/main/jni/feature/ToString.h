@@ -286,25 +286,3 @@ std::string VerifiedToString(int iCertify) {
     }
     return str;
 }
-
-int ListMonsterId[] = {
-    2002,
-    2003,
-    2004,
-    2005,
-    2006,
-    2008,
-    2009,
-    2011,
-    2012,
-    2013,
-    2056,
-    2059,
-    2072,
-};
-
-bool bMonster(int iValue) {
-    return std::find(std::begin(ListMonsterId), std::end(ListMonsterId), iValue) != std::end(ListMonsterId);
-}
-
-

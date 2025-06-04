@@ -1,3 +1,4 @@
+#include "Menu.h"
 
 void Auto_Retri(void *instance)
 {
@@ -59,19 +60,19 @@ void Auto_Retri(void *instance)
 	if (sary_key == 402) {
        retriDamage += (int)((float)retriDamage * (0.07f * sary_value));
             }
-      if (AutoRetribution.Lord|| AutoRetribution.Turtle) {
+      if (State::AutoRetribution.Lord|| State::AutoRetribution.Turtle) {
        if (sary_key == 409) {
            retriDamage += (int)((float)retriDamage * 0.20f);
               }
 		    }
 		}
 	}
-  if ( m_ID == 2002 && AutoRetribution.Lord || m_ID == 2003 && AutoRetribution.Turtle ) {                              
+  if ( m_ID == 2002 && State::AutoRetribution.Lord || m_ID == 2003 && State::AutoRetribution.Turtle ) {                              
           if (m_Hp <= (int) retriDamage && fDistance <= 5.4) {              	
                   ShowSelfPlayer_TryUseSkillByLockUnit(instance, 20020, Vector3::Normalized(_Position - selfPos), true, selfPos);                        
 				}
 			}
-	if (m_ID == 2013  && AutoRetribution.Creep || m_ID == 2011  && AutoRetribution.Creep || m_ID == 2056  && AutoRetribution.Litho||m_ID == 2004 && AutoRetribution.Buff || m_ID == 2005 && AutoRetribution.Buff || m_ID == 2002 && AutoRetribution.Lord || m_ID == 2003 && AutoRetribution.Turtle ) {                              
+	if (m_ID == 2013  && State::AutoRetribution.Creep || m_ID == 2011  && State::AutoRetribution.Creep || m_ID == 2056  && State::AutoRetribution.Litho||m_ID == 2004 && State::AutoRetribution.Buff || m_ID == 2005 && State::AutoRetribution.Buff || m_ID == 2002 && State::AutoRetribution.Lord || m_ID == 2003 && State::AutoRetribution.Turtle ) {                              
           if (m_Hp <= (int) retriDamage && fDistance <= 5.4 && fDistance1 <= 8) {           	
                   ShowSelfPlayer_TryUseSkillByLockUnit(instance, 20020, Vector3::Normalized(_Position - selfPos), true, selfPos);                        
 			}
@@ -84,13 +85,13 @@ void (*oShowSelfPlayerOnUpdate)(void * instance);
 void ShowSelfPlayerOnUpdate(void* instance) {
 	if (instance != NULL){
 	Auto_Retri(instance);
-	if (Auto.SwordLing || Auto.Gusion2){
+	if (State::Auto.SwordLing || State::Auto.Gusion2){
     SpeedAim++;
 	if(SpeedAim > 30){
 	Auto_Skill(instance);
         }
 	}
-	if (Auto.Karina || Auto.Gusion || Auto.Martis || Auto.Zilong){
+	if (State::Auto.Karina || State::Auto.Gusion || State::Auto.Martis || State::Auto.Zilong){
 	Auto_Skill(instance);
 	  }
 	}

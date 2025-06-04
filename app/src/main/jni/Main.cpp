@@ -38,6 +38,7 @@
 #include "Tools/fake_dlfcn.h"
 #include "Tools/Il2Cpp.h"
 #include "Tools/Tools.h"
+#include "Tools/Logger.h"
 
 #include "struct/Vector3.hpp"
 #include "struct/Vector2.h"
@@ -111,15 +112,15 @@ EGLBoolean _eglSwapBuffers (EGLDisplay dpy, EGLSurface surface) {
 	auto mousePos = io->MousePos;
 	
 	if  (mousePos.x >= hideShowMin.x && mousePos.x <= hideShowMax.x && mousePos.y >= hideShowMin.y && mousePos.y <= hideShowMax.y) {
-		showMenu = true;
+		State::showMenu = true;
 	}
 
-	UnlockSkin();
+	// UnlockSkin();
 	GusionSkill();
 	//ShowWindow
-	if (showMenu) ShowMenu();
+	if (State::showMenu) UISystem::ShowMenu();
 	
-	if (bFullChecked) drawESP(ImGui::GetBackgroundDrawList(), screenWidth, screenHeight);
+	if (State::bFullChecked) drawESP(ImGui::GetBackgroundDrawList(), screenWidth, screenHeight);
 	
 	if (!AttachIconDone) {
 		AttachIcon();
@@ -145,7 +146,7 @@ EGLBoolean _eglSwapBuffers (EGLDisplay dpy, EGLSurface surface) {
 }
 
 void *main_thread(void *) {
-	
+  LOGI(OBFUSCATE("pthread created"));
     while (!m_IL2CPP) {
         m_IL2CPP = Tools::GetBaseAddress("liblogic.so");
         sleep(1);
@@ -157,8 +158,8 @@ void *main_thread(void *) {
     }
 	
 	Il2CppAttach("liblogic.so");
-	UnlockSkin();
-	sleep(20);
+	//cUnlockSkin();
+	sleep(10);
     Tools::Hook((void *) dlsym_ex(m_EGL, "eglSwapBuffers"), (void *) _eglSwapBuffers, (void **) &orig_eglSwapBuffers);
  /*   Tools::Hook(Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE("System/Net"), OBFUSCATE("Dns"), OBFUSCATE("GetHostByName_internal"), 4), (void *) oDns_GetHostByName_internal, (void **) &Dns_GetHostByName_internal);
     Tools::Hook(Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE("System/Net"), OBFUSCATE("Dns"), OBFUSCATE("GetHostByAddr_internal"), 4), (void *) oDns_GetHostByAddr_internal, (void **) &Dns_GetHostByAddr_internal);
@@ -169,7 +170,8 @@ void *main_thread(void *) {
     Tools::Hook(Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE("System/Net"), OBFUSCATE("Dns"), OBFUSCATE("GetHostAddresses"), 1), (void *) oDns_GetHostAddresses, (void **) &Dns_GetHostAddresses);
     Tools::Hook(Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE("System/Net"), OBFUSCATE("Dns"), OBFUSCATE("GetHostByName"), 1), (void *) oDns_GetHostByName, (void **) &Dns_GetHostByName);
     Tools::Hook((void *) (uintptr_t)Il2CppGetMethodOffset(OBFUSCATE("Assembly-CSharp.dll"), OBFUSCATE("System/Runtime/Remoting"), OBFUSCATE("ServerIdentity"), OBFUSCATE("DisposeServerObject")), (void *) DisposeServerObject, (void **) &oDisposeServerObject);
-	*/sleep(5);
+	*/
+  sleep(20);
 	Tools::Hook((void *) ShowSelfPlayer_OnUpdate, (void *) ShowSelfPlayerOnUpdate, (void **) &oShowSelfPlayerOnUpdate);
     Tools::Hook((void *) ShowSelfPlayer_TryUseSkill, (void *) TryUseSkill, (void **) &orig_TryUseSkill); 
     pthread_t t;
@@ -177,7 +179,7 @@ void *main_thread(void *) {
 }
 
 jint (JNICALL *Real_JNI_OnLoad)(JavaVM *vm, void *reserved);
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env;
 	
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
@@ -200,7 +202,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     if (CopyFile(pathAkSoundOri1.c_str(), pathAkSoundOri2.c_str())) {
         void *handle = dlopen(pathAkSoundOri2.c_str(), RTLD_NOW);
         if (!handle) {
-            handle = dlopen(pathAkSoundOri2.c_str(), RTLD_NOW);
+            handle = dlopen(pathAkSoundOri2.c_str(), RTLD_LAZY | RTLD_LOCAL);
             sleep(1);
         }
         auto Hook_JNI_OnLoad = dlsym(handle, OBFUSCATE("JNI_OnLoad"));
@@ -216,4 +218,31 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
         }
     }
     return JNI_ERR;
+}
+
+/*extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return JNI_ERR;
+    }
+    g_vm = vm;
+
+    // Langsung hook tanpa manipulasi file
+    pthread_t t;
+    pthread_create(&t, nullptr, main_thread, nullptr);
+    
+    // Tetap panggil JNI_OnLoad asli jika diperlukan
+    void *libAk = dlopen("libAkSoundEngine.so", RTLD_NOW);
+    if (libAk) {
+        auto real_JNI_OnLoad = reinterpret_cast<decltype(&JNI_OnLoad)>(dlsym(libAk, "JNI_OnLoad"));
+        if (real_JNI_OnLoad) {
+            return real_JNI_OnLoad(vm, reserved);
+        }
+    }
+    return JNI_VERSION_1_6;
+}*/
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_lieshooter_imgui_MainActivity_getNativeMessage(JNIEnv* env, jobject) {
+    return env->NewStringUTF("Hello from Native Code!");
 }
