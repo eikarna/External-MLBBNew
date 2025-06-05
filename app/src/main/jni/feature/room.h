@@ -13,8 +13,8 @@ struct PlayerData {
 };
 
 struct {
-    PlayerData PlayerB[13];
-    PlayerData PlayerR[13];
+    PlayerData PlayerB[5];
+    PlayerData PlayerR[5];
 } RoomInfo;
 
 static bool InitializeNick = false;
@@ -54,6 +54,22 @@ void RoomInfoList() {
             InitializeNick = true;
         }
         List<uintptr_t> *m_RoomPlayerInfo = GetBattlePlayerInfo();
+        LOGI("m_RoomPlayerInfo: ");
+        if (m_RoomPlayerInfo) {
+            LOGI("===== START m_RoomPlayerInfo Dump =====");
+            LOGI("List size: %d", m_RoomPlayerInfo->getSize());
+            for (int i = 0; i < m_RoomPlayerInfo->getSize(); i++) {
+                uintptr_t item = m_RoomPlayerInfo->getItems()[i];
+                if (item) {
+                    LOGI("[%d] Address: 0x%lX", i, (unsigned long)item);
+                } else {
+                    LOGI("[%d] NULL", i);
+                }
+            }
+            LOGI("===== END m_RoomPlayerInfo Dump =====");
+        } else {
+            LOGI("m_RoomPlayerInfo is NULL!");
+        }
         if (!m_RoomPlayerInfo) return;
         int PlayerB = 0, PlayerR = 0, iSelfCamp = -1;
         int m_uiID = *(int *)(SystemData_m_uiID);

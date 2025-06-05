@@ -46,11 +46,11 @@ void Auto_Skill(void *instance)
         float PercentHP = m_Hp1 * 100 / m_HpMax1;
 		float fDistance1 = Vector3::Distance(selfPos, _Position1);
         int player_level = *(int *)((uintptr_t) instance + EntityBase_m_Level);
-        int m_basePhyAtt = *(int *)((uintptr_t) instance + M_BasePhyAtt);
+        // int m_basePhyAtt = *(int *)((uintptr_t) instance + M_BasePhyAtt);
        
 		int m_KillWildTimes =  *(int *)((uintptr_t) LogicFighter + LogicPlayer_KillWildTimes);
     
-	float MartisS3 = 900.f + m_basePhyAtt;
+	float MartisS3 = 900.f; // + m_basePhyAtt;
 	float KarinaS3 = 950.f ;
 	float ZilongS2 = 850.f;
   

@@ -1,0 +1,287 @@
+#include <iostream>
+#include <stdio.h>
+#include <string>
+#include <unistd.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <vector>
+#include <map>
+#include <chrono>
+#include <fstream>
+#include <thread>
+#include <pthread.h>
+#include <dirent.h>
+#include <libgen.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <sys/uio.h>
+#include <fcntl.h>
+#include <jni.h>
+#include <android/log.h>
+#include <elf.h>
+#include <dlfcn.h>
+#include <sys/system_properties.h>
+#include <EGL/egl.h>
+#include <GLES3/gl3.h>
+#include <android/native_window.h>
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+
+#include "imgui.h"
+#include "imgui_additional.h"
+#include "imgui_themes.h"
+#include "backends/imgui_impl_android.h"
+#include "backends/imgui_impl_opengl3.h"
+#include "fonts/GoogleSans.h"
+
+#include "Tools/xDL/xdl.h"
+#include "Tools/fake_dlfcn.h"
+#include "Tools/Il2Cpp.h"
+#include "Tools/Tools.h"
+#include "Tools/Logger.h"
+
+#include "struct/Vector3.hpp"
+#include "struct/Vector2.h"
+#include "struct/Rect.h"
+#include "struct/Quaternion.h"
+
+#include "config/setup.h"
+#include "config/JNIStuff.h"
+
+#include "TouchSystem.h"
+
+#include "icon/DrawIcon.h"
+
+#include "login/Login.h"
+
+#include "feature/class.h"
+#include "feature/ToString.h"
+#include "feature/room.h"
+#include "feature/esp.h"
+#include "feature/protection.h"
+#include "feature/AutoSkill.h"
+#include "feature/TrySkill.h"
+#include "feature/Retribution.h"
+#include "Menu.h"
+
+static bool modInitialized = false;
+static pthread_t mainThread = 0;
+
+EGLBoolean (*orig_eglSwapBuffers)(...);
+EGLBoolean _eglSwapBuffers (EGLDisplay dpy, EGLSurface surface) {
+    eglQuerySurface(dpy, surface, EGL_WIDTH, &glWidth);
+    eglQuerySurface(dpy, surface, EGL_HEIGHT, &glHeight);
+	if (!(glWidth > 0 && glHeight > 0)) return orig_eglSwapBuffers(dpy, surface);
+    if (!g_Initialized) {
+        ImGui::CreateContext();
+        ImGuiStyle* style = &ImGui::GetStyle();
+
+		SetAnotherDarkThemeReally();
+		style->WindowBorderSize = 1.0f;
+		style->WindowTitleAlign = ImVec2(0.5f, 0.5f);
+        style->ScaleAllSizes(1.8f);
+
+        ImGuiIO* io = &ImGui::GetIO();
+        io->IniFilename = nullptr;
+		
+		io->DisplaySize = ImVec2((float)glWidth, (float)glHeight);
+		
+        ImGui_ImplOpenGL3_Init("#version 300 es");
+
+        ImFontConfig font_cfg;
+        io->Fonts->AddFontFromMemoryCompressedTTF(GoogleSans_compressed_data, GoogleSans_compressed_size, 23.0f, &font_cfg, io->Fonts->GetGlyphRangesChineseFull());
+		
+		setRes(glWidth, glHeight);
+		
+        g_Initialized = true;
+    }
+
+    ImGuiIO* io = &ImGui::GetIO();
+	
+    ImGui_ImplOpenGL3_NewFrame();
+	ImplAndroid_NewFrame();
+    ImGui::NewFrame();
+	
+	if (screenWidth < glWidth && screenHeight < glHeight) setRes(glWidth, glHeight);
+	
+	// set the unity screen resolution to fix touch issue
+    if (screenWidth != Screen::get_width() || screenHeight != Screen::get_height()) {
+        Screen::SetResolution(screenWidth, screenHeight, true);
+    }
+	
+	ImGui_GetTouch(io, screenHeight);
+	
+	auto hideShowMin = ImVec2(0, screenHeight - 80);
+	auto hideShowMax = ImVec2(80, screenHeight);
+	auto mousePos = io->MousePos;
+	
+	if  (mousePos.x >= hideShowMin.x && mousePos.x <= hideShowMax.x && mousePos.y >= hideShowMin.y && mousePos.y <= hideShowMax.y) {
+		State::showMenu = true;
+	}
+
+	// UnlockSkin();
+	GusionSkill();
+	//ShowWindow
+	if (State::showMenu) UISystem::ShowMenu();
+	
+	if (State::bFullChecked) drawESP(ImGui::GetBackgroundDrawList(), screenWidth, screenHeight);
+	
+	if (!AttachIconDone) {
+		AttachIcon();
+		AttachIconDone = true;
+	}
+	
+	if (!AttachSpellDone) {
+		AttachSpell();
+		AttachSpellDone = true;
+	}
+	
+    ImGui::EndFrame();
+    ImGui::Render();
+	glViewport(0, 0, (int)io->DisplaySize.x, (int)io->DisplaySize.y);
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	
+	if (clearMousePos) {
+        io->MousePos = ImVec2(-1, -1);
+        clearMousePos = false;
+    }
+	
+    return orig_eglSwapBuffers(dpy, surface);
+}
+
+void *main_thread(void *) {
+  LOGI(OBFUSCATE("main_thread created"));
+
+    // Tunggu library utama
+    int attempts = 0;
+    while (!m_IL2CPP && attempts < 30) {
+        m_IL2CPP = Tools::GetBaseAddress("liblogic.so");
+        if (!m_IL2CPP) {
+            LOGI(OBFUSCATE("Waiting for liblogic.so..."));
+            sleep(1);
+            attempts++;
+        }
+    }
+    
+    if (!m_IL2CPP) {
+        LOGE(OBFUSCATE("Failed to find liblogic.so"));
+        return nullptr;
+    }
+
+    while (!m_EGL) {
+        m_EGL = xdl_open("libEGL.so", RTLD_NOW);
+        sleep(1);
+    }
+	
+	Il2CppAttach("liblogic.so");
+	//cUnlockSkin();
+	sleep(10);
+    Tools::Hook((void *) xdl_sym(m_EGL, "eglSwapBuffers", NULL), (void *) _eglSwapBuffers, (void **) &orig_eglSwapBuffers);
+  sleep(20);
+	Tools::Hook((void *) ShowSelfPlayer_OnUpdate, (void *) ShowSelfPlayerOnUpdate, (void **) &oShowSelfPlayerOnUpdate);
+    Tools::Hook((void *) ShowSelfPlayer_TryUseSkill, (void *) TryUseSkill, (void **) &orig_TryUseSkill); 
+    return 0;
+}
+
+// Old Methods
+jint (JNICALL *Real_JNI_OnLoad)(JavaVM *vm, void *reserved);
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    if (modInitialized) {
+        LOGI(OBFUSCATE("Mod already initialized, skipping"));
+        if (Real_JNI_OnLoad) {
+            return Real_JNI_OnLoad(vm, reserved);
+        }
+        return JNI_VERSION_1_6;
+    }
+    modInitialized = true;
+
+    LOGI(OBFUSCATE("AkSoundEngine called!"));
+    JNIEnv *env;
+	
+    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        LOGE(OBFUSCATE("Failed to get JNIEnv"));
+        return JNI_ERR;
+    }
+	g_vm = vm;
+	
+	std::string apkPkg = getPackageName(GetJNIEnv(g_vm));
+  LOGI("Package name %s", apkPkg.c_str());
+	std::string libAkSound = std::string(OBFUSCATE("libAkSoundEngine.so"));
+	std::string libAkSoundBytes = std::string(OBFUSCATE("libAkSoundEngine.bytes"));
+    std::string libAkSoundOri1 = std::string(OBFUSCATE("libAkSoundEngine+.bytes"));
+    std::string libAkSoundOri2 = std::string(OBFUSCATE("libAkSoundEngine+.so"));
+    
+    std::string localPath = std::string(OBFUSCATE("/storage/emulated/0/Android/data/")) + apkPkg + std::string(OBFUSCATE("/files/dragon2017/assets/comlibs/")) + std::string(ARCH);
+    // std::string rootPath = std::string(OBFUSCATE("/data/data/")) + apkPkg + std::string(OBFUSCATE("/app_libs/comlibs/")) + std::string(ARCH);
+    std::string rootPath = std::string(OBFUSCATE("/data/data/")) + apkPkg + std::string(OBFUSCATE("/app_libs"));
+    
+    std::string pathAkSound = rootPath + std::string(OBFUSCATE("/")) + libAkSound;
+    std::string pathAkSoundBytes = localPath + std::string(OBFUSCATE("/")) + libAkSoundBytes;
+    std::string pathAkSoundOri1 = localPath + std::string(OBFUSCATE("/")) + libAkSoundOri1;
+    std::string pathAkSoundOri2 = rootPath + std::string(OBFUSCATE("/")) + libAkSoundOri2;
+    
+    if (CopyFile(pathAkSoundOri1.c_str(), pathAkSoundOri2.c_str())) {
+        void *handle = xdl_open(pathAkSoundOri2.c_str(), RTLD_NOW);
+        if (!handle) {
+            LOGE("xdl_open failed: %s", dlerror());
+            handle = dlopen(pathAkSoundOri2.c_str(), RTLD_LAZY | RTLD_LOCAL);
+            sleep(10);
+        }
+        auto Hook_JNI_OnLoad = xdl_sym(handle, "JNI_OnLoad", nullptr);
+        // auto Hook_JNI_OnLoad = reinterpret_cast<decltype(&Real_JNI_OnLoad)>(xdl_sym(handle, "JNI_OnLoad", nullptr));
+        if (Hook_JNI_OnLoad) {
+            LOGI(OBFUSCATE("Found Real JNI_OnLoad!"));
+            Real_JNI_OnLoad = decltype(Real_JNI_OnLoad)(Hook_JNI_OnLoad);
+            if (mainThread == 0) {
+              if (pthread_create(&mainThread, nullptr, main_thread, nullptr) != 0) {
+                LOGE(OBFUSCATE("Failed to create main_thread"));
+              }
+            }
+            /* Uncomment this if you want safe antiban
+            if (CheckFile(pathAkSoundOri2.c_str())) {
+                std::remove(pathAkSound.c_str());
+                std::rename(pathAkSoundOri2.c_str(), pathAkSound.c_str());
+            }
+            if (CheckFile(pathAkSoundOri1.c_str())) {
+                std::remove(pathAkSoundBytes.c_str());
+                std::rename(pathAkSoundOri1.c_str(), pathAkSoundBytes.c_str());
+            }
+            */
+            jint ret = Real_JNI_OnLoad(vm, reserved);
+            LOGI("Real_JNI_OnLoad returned: %d", ret);
+            return ret;
+        } else {
+          LOGE("xdl_sym for JNI_OnLoad failed: %s", dlerror());
+        }
+    }
+    return JNI_ERR;
+}
+
+
+/* Newer Methods
+extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+    JNIEnv *env;
+    if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
+        return JNI_ERR;
+    }
+    g_vm = vm;
+
+    // Buat thread untuk mod menu
+    pthread_t t;
+    pthread_create(&t, nullptr, main_thread, nullptr);
+
+    // original libAkSoundEngine
+    void *libAk = xdl_open("libAkSoundEngine+.so", RTLD_NOW);
+
+    if (libAk) {
+        auto *real_JNI_OnLoad = reinterpret_cast<decltype(&JNI_OnLoad)>(xdl_sym(libAk, "JNI_OnLoad", nullptr));
+        dlclose(xdl_close(libAk));
+
+        if (real_JNI_OnLoad) {
+            return real_JNI_OnLoad(vm, reserved);
+        }
+    }
+
+    // Jika tidak ada real_JNI_OnLoad, kembalikan versi default
+    return JNI_VERSION_1_6;
+}*/

@@ -83,25 +83,6 @@ namespace Features {
     };
 }
 
-struct RoomInfoStruct {
-    struct PlayerInfo {
-        std::string Name;
-        std::string UserID;
-        std::string Verified;
-        std::string Rank;
-        std::string Star;
-        int HeroID;
-        int Spell;
-    } PlayerB[5], PlayerR[5];
-};
-
-namespace ESP {
-    int MinimapPos = 49;
-    int MinimapSize = 227;
-    float ICSize = 20.0f;
-    float ICHealthThin = 1.0f;
-};
-
 // ======================
 // Global State
 // ======================
@@ -247,8 +228,10 @@ void UISystem::RenderVisualTab() {
     ImGui::BeginGroupPanel("Player ESP", ImVec2(0.0f, 0.0f));
     {
         ImGui::Checkbox("Line", &State::ESP.Line);
+        ImGui::SameLine();
         ImGui::Checkbox("Round", &State::ESP.Round);
         ImGui::Checkbox("Name", &State::ESP.Name);
+        ImGui::SameLine();
         ImGui::Checkbox("Hero", &State::ESP.Hero);
         ImGui::Checkbox("Health", &State::ESP.Health);
     }
@@ -267,19 +250,9 @@ void UISystem::RenderVisualTab() {
     ImGui::BeginGroupPanel("Info ESP", ImVec2(0.0f, 0.0f));
     {
         ImGui::Checkbox("Skill CD", &State::ESP.SkillCD);
+        ImGui::SameLine();
         ImGui::Checkbox("Spell CD", &State::ESP.SpellCD);
         ImGui::Checkbox("Hero Alert", &State::ESP.Alert);
-    }
-    ImGui::EndGroupPanel();
-
-    // Minimap Section
-    ImGui::BeginGroupPanel("Minimap Settings", ImVec2(0.0f, 0.0f));
-    {
-        ImGui::Checkbox("Show Minimap Icons", &State::ESP.MinimapIcon);
-        ImGui::SliderInt("Position", &ESP::MinimapPos, 0, 400);
-        ImGui::SliderInt("Size", &ESP::MinimapSize, 0, 600);
-        ImGui::SliderFloat("Icon Size", &ICSize, 20, 40, "%.1f");
-        ImGui::SliderFloat("Health Thickness", &ICHealthThin, 1, 5, "%.1f");
     }
     ImGui::EndGroupPanel();
 
@@ -302,10 +275,9 @@ void UISystem::RenderHelperTab() {
         ImGui::Checkbox("Buff", &State::AutoRetribution.Buff);
         ImGui::SameLine();
         ImGui::Checkbox("Turtle", &State::AutoRetribution.Turtle);
-        ImGui::SameLine();
         ImGui::Checkbox("Lord", &State::AutoRetribution.Lord);
-        ImGui::Checkbox("Crab", &State::AutoRetribution.Creep);
         ImGui::SameLine();
+        ImGui::Checkbox("Crab", &State::AutoRetribution.Creep);
         ImGui::Checkbox("Lithowanderer", &State::AutoRetribution.Litho);
     }
     ImGui::EndGroupPanel();
@@ -316,16 +288,17 @@ void UISystem::RenderHelperTab() {
         ImGui::Checkbox("Basic Attack", &State::Aim.Basic);
         ImGui::SameLine();
         ImGui::Checkbox("Battle Spell", &State::Aim.Spell);
-        ImGui::Columns(2, nullptr, false);
-        ImGui::Checkbox("Skill 1", &State::Aim.Skill1);
-        ImGui::NextColumn();
-        ImGui::Checkbox("Skill 2", &State::Aim.Skill2);
-        ImGui::Columns(1);
-        ImGui::Columns(2, nullptr, false);
-        ImGui::Checkbox("Skill 3", &State::Aim.Skill3);
-        ImGui::NextColumn();
-        ImGui::Checkbox("Skill 4", &State::Aim.Skill4);
-        ImGui::Columns(1);
+        ImGui::BeginGroupPanel("Skill Selection", ImVec2(0.0f, 0.0f));
+        {
+          ImGui::Checkbox("Skill 1", &State::Aim.Skill1);
+          ImGui::SameLine();
+          ImGui::Checkbox("Skill 2", &State::Aim.Skill2);
+
+          ImGui::Checkbox("Skill 3", &State::Aim.Skill3);
+          ImGui::SameLine();
+          ImGui::Checkbox("Skill 4", &State::Aim.Skill4);
+        }
+        ImGui::EndGroupPanel();
     }
     ImGui::EndGroupPanel();
 
@@ -348,6 +321,7 @@ void UISystem::RenderHelperTab() {
     ImGui::BeginGroupPanel("Target Selection", ImVec2(0.0f, 0.0f));
     {
         ImGui::RadioButton("Closest", reinterpret_cast<int*>(&State::Aim.Target), Features::Aim::CLOSEST);
+        ImGui::SameLine();
         ImGui::RadioButton("Lowest HP", reinterpret_cast<int*>(&State::Aim.Target), Features::Aim::LOWEST_HP);
         ImGui::RadioButton("Lowest % HP", reinterpret_cast<int*>(&State::Aim.Target), Features::Aim::LOWEST_HP_PERCENT);
         ImGui::SliderFloat("Detection Range", &State::RangeFOV, 0, 200, "%.1f m");
@@ -499,7 +473,7 @@ void UISystem::ShowMenu() {
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + 650, viewport->WorkPos.y + 20), 
                            ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(650, 680), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(120, 80), ImGuiCond_FirstUseEver);
 
     // State management
     static bool isLogin = false;

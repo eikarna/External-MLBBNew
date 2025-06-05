@@ -29,7 +29,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 }
 
 std::string Login(JavaVM *vm, const char *user_key, bool *success) {
-    JNIEnv *env;
+    /*JNIEnv *env;
     vm->AttachCurrentThread(&env, 0);
     auto object = getJNIContext(env);
     std::string hwid = user_key;
@@ -120,5 +120,13 @@ std::string Login(JavaVM *vm, const char *user_key, bool *success) {
         }
     }
     curl_easy_cleanup(curl);
-    return errMsg;
+    return errMsg;*/
+    g_Token = "beta";
+    g_Auth = g_Token;
+    expired = "99-99-9999";
+    title = "arm64";
+    version = "1.0";
+    *success = g_Token == g_Auth;
+    battleData = "Gatau Apaan BattleData";
+    return "";
 }
