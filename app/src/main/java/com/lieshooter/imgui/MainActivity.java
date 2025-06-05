@@ -4,14 +4,13 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.util.Log;
+import com.lieshooter.imgui.R;
 
 public class MainActivity extends Activity {
     private static final String TAG = "NativeLibLoader";
 
-    // Load native library
     static {
         try {
-            // Use the actual library name from your Android.mk (LOCAL_MODULE)
             System.loadLibrary("AkSoundEngine+");
             Log.i(TAG, "Native library loaded successfully");
         } catch (UnsatisfiedLinkError e) {
@@ -19,7 +18,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    // Native method declaration
     public native String getNativeMessage();
 
     @Override
@@ -27,10 +25,10 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
-        TextView tv = findViewById(R.id.sample_text);
+        // FIX: Add explicit cast to TextView
+        TextView tv = (TextView) findViewById(R.id.sample_text);
         
         try {
-            // Call native method
             String message = getNativeMessage();
             tv.setText(message);
         } catch (Exception e) {

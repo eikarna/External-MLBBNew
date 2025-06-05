@@ -9,18 +9,5 @@ pluginManagement {
     }
 }
 
-dependencyResolutionManagement {
-    repositories {
-        maven { url 'https://maven.aliyun.com/repository/public/' }
-        maven { url 'https://maven.aliyun.com/repository/google/' }
-        maven { url 'https://dl.bintray.com/ppartisan/maven/' }
-        maven { url "https://clojars.org/repo/" }
-        maven { url "https://jitpack.io" }
-        mavenLocal()
-        mavenCentral()
-        google()
-    }
-}
-
 rootProject.name = "ImGui"
 include ':app'

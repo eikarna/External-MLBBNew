@@ -25,19 +25,16 @@ jobs:
         sudo apt update
         sudo apt install -y tree p7zip git cmake ninja-build
     
-    - name: Download Android NDK
+    # Install specific NDK version
+    - name: Download Android NDK r27c
       uses: nttld/setup-ndk@v1
       with:
-        ndk-version: r27c
+        ndk-version: 'r27c'
         local-cache: true
-        link-to-sdk: true
         add-to-path: true
+        link-to-sdk: true
     
-    #- name: Download and Build Dobby for Multiple Architectures
-    #  run: |
-    #    chmod +x app/build-dobby.sh
-    #    ./app/build-dobby.sh
-
+    # Remove Gradle setup action - using wrapper instead
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     
@@ -46,7 +43,7 @@ jobs:
         gradle wrapper
         ./gradlew build -x lint
 
-    - name: Tree directories & Files (May lag your browser)
+    - name: Tree directories & Files
       run: tree
     
     - name: Package Libraries
@@ -62,6 +59,5 @@ jobs:
         name: Release ${{github.run_number}}
         files: |
           app/build/outputs/apk/debug/app-debug.apk
-          app/build/outputs/apk/release/app-release.apk
           library-release.zip
           library-debug.zip

@@ -318,7 +318,7 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
             LOGI("Real_JNI_OnLoad returned: %d", ret);
             return ret;
         } else {
-            LOGE("xdl_sym for JNI_OnLoad failed: %s", dlerror());
+            LOGE("dlsym for JNI_OnLoad failed: %s", dlerror());
         }
     }
     return JNI_ERR;
